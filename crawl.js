@@ -32,20 +32,29 @@ function normalizeURL(url) {
 async function crawlPage(baseURL, currentURL = baseURL, pages = {}) {
     const currentURLObj = new URL(currentURL);
     const baseURLObj = new URL(baseURL);
-    if (cerrentURL.hostname !== baseURL.hostname) {
-        return pages;
-    }
-    const normalizedCurrentURL = normalizeURL(currentURL);
-    if (pages[normalizedCurrentURL]) {
-        pages[normalizedCurrentURL]++;
+    if (currentURLObj.hostname !== baseURLObj.hostname) {
         return pages;
     }
 
-    pages[normalizedCurrentURL] = 1;
+    const normalizedURL = normalizeURL(currentURL);
+
+    if (pages[normalizedURL] > 0) {
+        pages[normalizedURL]++;
+        return pages;
+    }
+
+    pages[normalizedURL] = 1;
 
     console.log(`Crawling ${currentURL}...`);
-    const html = await fetchHTML(currentURL);
-    let urls = getURLsFromHTML(html, baseURL);
+    let html = '';
+    try {
+        html = await fetchHTML(currentURL);
+    } catch(err) {
+        console.log(`${err.message}`);
+        return pages;
+    }
+
+    const urls = getURLsFromHTML(html, baseURL);
     for (const url of urls) {
         pages = await crawlPage(baseURL, url, pages);
     }
